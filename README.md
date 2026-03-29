@@ -4,7 +4,7 @@ Browse, search, and filter all your GitHub starred repos from a single static pa
 
 A minimal reimplementation of [dmarx/stars](https://github.com/dmarx/stars) in ~800 lines of vanilla JavaScript. No frameworks, no build step, no dependencies beyond Node.js 22+.
 
-<img width="790" height="923" alt="Screenshot_20260329_142231" src="https://github.com/user-attachments/assets/48c10067-6514-47ab-a0d2-c056c795a91b" />
+<img width="864" height="1232" alt="Screenshot_20260329_144202" src="https://github.com/user-attachments/assets/24645141-8d2e-422e-8d76-dcb525db16e6" />
 
 ## Goals
 
