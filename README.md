@@ -2,6 +2,8 @@
 
 A minimal reimplementation of [dmarx/stars](https://github.com/dmarx/stars) in ~700 lines of vanilla JavaScript. No frameworks, no build step, no dependencies beyond Node.js 22+.
 
+<img width="790" height="923" alt="Screenshot_20260329_142231" src="https://github.com/user-attachments/assets/48c10067-6514-47ab-a0d2-c056c795a91b" />
+
 ## Goals
 
 - **Single collector script** (`collect.mjs`): one Node.js script replaces four Python scripts. Fetches starred repos, user profile, and star lists in a single pass. Outputs `data.json`.
