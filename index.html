@@ -129,6 +129,19 @@
     font-size: var(--font-sm); background: var(--color-bg-tertiary); color: var(--color-text-muted); border: 1px solid var(--color-border);
   }
 
+  /* Constellation chart */
+  .chart-container { margin-bottom: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius); overflow: hidden; background: var(--color-bg-secondary); }
+  .chart-container svg { display: block; }
+  .chart-legend { display: flex; flex-wrap: wrap; gap: .375rem .75rem; padding: .5rem .75rem; border-top: 1px solid var(--color-border); }
+  .chart-legend span { display: inline-flex; align-items: center; gap: 4px; font-size: var(--font-sm); color: var(--color-text-muted); cursor: pointer; }
+  .chart-legend span:hover { color: var(--color-text); }
+  .chart-legend span.active { color: var(--color-text); text-decoration: underline; }
+  .chart-tooltip {
+    position: absolute; pointer-events: none; padding: 6px 10px; font-size: var(--font-sm);
+    background: var(--color-bg-tertiary); border: 1px solid var(--color-border); border-radius: 4px;
+    color: var(--color-text); opacity: 0; transition: opacity .15s;
+  }
+
   .loading { text-align: center; padding: 4rem; font-size: 1.125rem; color: var(--color-text-placeholder); }
   .count-badge { font-size: var(--font-sm); padding: 0 6px; background: var(--color-border); border-radius: 9999px; color: var(--color-text-secondary); margin-left: .5rem; vertical-align: middle; }
 
@@ -141,12 +154,15 @@
     .sort-group { flex: 1 1 100%; }
   }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 </head>
 <body>
 <div class="container">
   <a id="profile-header" class="profile-header" target="_blank"></a>
   <div class="main">
       <h2 class="stars-header" id="heading">Stars</h2>
+      <div id="chart" class="chart-container open"></div>
+      <div id="chart-tooltip" class="chart-tooltip"></div>
       <div class="controls-row">
         <div class="search-form">
           <input type="text" id="search" placeholder="Search stars">
@@ -200,7 +216,7 @@ const FIELDS = [
 
 let data = null, expanded = null;
 let sortField = 'starred_at', sortDir = 'desc';
-let textSearch = '', activeList = null;
+let textSearch = '', activeList = null, activeLangs = new Set();
 let conditions = [], conjunction = 'AND';
 
 // --- Data loading ---
@@ -375,6 +391,7 @@ function filterAndSort() {
   entries = entries.filter(([name, repo]) => {
     if (q && !name.toLowerCase().includes(q) && !(repo.metadata?.description ?? '').toLowerCase().includes(q)) return false;
     if (activeList && !(repo.lists || []).includes(activeList)) return false;
+    if (activeLangs.size && !activeLangs.has(repo.metadata?.language || 'Unknown')) return false;
     const active = conditions.filter(c => c.value);
     if (active.length === 0) return true;
     return conjunction === 'AND'
@@ -400,6 +417,7 @@ function render() {
   const entries = filterAndSort();
   const total = Object.keys(data.repos).length;
   document.getElementById('heading').innerHTML = `Stars <span class="count-badge">${total}</span>`;
+  renderChart(entries);
 
   document.getElementById('repos').innerHTML = entries.map(([name, repo]) => {
     const m = repo.metadata || {};
@@ -478,6 +496,94 @@ function relTime(s) {
   if (months < 12) return `${months} month${months > 1 ? 's' : ''} ago`;
   const years = Math.floor(days / 365);
   return `${years} year${years > 1 ? 's' : ''} ago`;
+}
+// --- Constellation chart ---
+
+function renderChart(entries) {
+  const container = document.getElementById('chart');
+  const tooltip = document.getElementById('chart-tooltip');
+  container.innerHTML = '';
+  const width = container.clientWidth;
+  if (!width) return;
+  const height = Math.min(width * 0.6, 500);
+  const margin = { top: 12, right: 12, bottom: 32, left: 42 };
+
+  const repos = entries
+    .map(([name, r]) => ({
+      name,
+      starred: new Date(r.metadata?.starred_at),
+      stars: Math.max(r.metadata?.stars ?? 1, 1),
+      language: r.metadata?.language,
+      desc: r.metadata?.description || '',
+    }))
+    .filter(d => !isNaN(d.starred));
+
+  if (!repos.length) return;
+
+  const svg = d3.select(container).append('svg')
+    .attr('width', width).attr('height', height);
+
+  const x = d3.scaleTime()
+    .domain(d3.extent(repos, d => d.starred))
+    .range([margin.left, width - margin.right]);
+
+  const y = d3.scaleLog()
+    .domain([1, d3.max(repos, d => d.stars)])
+    .range([height - margin.bottom, margin.top]);
+
+  // X axis
+  svg.append('g')
+    .attr('transform', `translate(0,${height - margin.bottom})`)
+    .call(d3.axisBottom(x).ticks(width > 500 ? 6 : 3).tickFormat(d3.timeFormat('%Y')).tickSize(0))
+    .call(g => { g.select('.domain').attr('stroke', '#21262d'); g.selectAll('text').attr('fill', '#8b949e').attr('dy', 16).attr('font-size', 13); });
+
+  // Y axis
+  svg.append('g')
+    .attr('transform', `translate(${margin.left},0)`)
+    .call(d3.axisLeft(y).ticks(3, '~s').tickSize(0))
+    .call(g => { g.select('.domain').attr('stroke', '#21262d'); g.selectAll('text').attr('fill', '#8b949e').attr('dx', -4).attr('font-size', 13); });
+
+  // Dots
+  svg.selectAll('circle')
+    .data(repos)
+    .join('circle')
+    .attr('cx', d => x(d.starred))
+    .attr('cy', d => y(d.stars))
+    .attr('r', 4)
+    .attr('fill', d => LANG_COLORS[d.language] || '#8b949e')
+    .attr('opacity', 0.8)
+    .style('cursor', 'pointer')
+    .on('mouseenter', (e, d) => {
+      tooltip.style.opacity = 1;
+      tooltip.innerHTML = `<strong>${esc(d.name)}</strong><br>${esc(d.language || 'Unknown')} &middot; ${fmt(d.stars)} stars`;
+    })
+    .on('mousemove', e => {
+      tooltip.style.left = (e.pageX + 12) + 'px';
+      tooltip.style.top = (e.pageY - 12) + 'px';
+    })
+    .on('mouseleave', () => { tooltip.style.opacity = 0; })
+    .on('click', (e, d) => {
+      window.open('https://github.com/' + d.name, '_blank');
+    });
+
+
+  // Legend (always from full dataset)
+  const langCounts = {};
+  Object.values(data.repos).forEach(r => { const l = r.metadata?.language || 'Unknown'; langCounts[l] = (langCounts[l] || 0) + 1; });
+  const sorted = Object.entries(langCounts).sort((a, b) => b[1] - a[1]);
+  const legend = document.createElement('div');
+  legend.className = 'chart-legend';
+  legend.innerHTML = sorted.map(([lang, count]) =>
+    `<span data-lang="${esc(lang)}" class="${activeLangs.has(lang) ? 'active' : ''}"><span class="lang-dot" style="background:${LANG_COLORS[lang] || '#8b949e'}"></span>${esc(lang)} (${count})</span>`
+  ).join('');
+  legend.addEventListener('click', e => {
+    const item = e.target.closest('[data-lang]');
+    if (!item) return;
+    const lang = item.dataset.lang;
+    activeLangs.has(lang) ? activeLangs.delete(lang) : activeLangs.add(lang);
+    render();
+  });
+  container.appendChild(legend);
 }
 </script>
 </body>
