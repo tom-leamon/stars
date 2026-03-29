@@ -72,6 +72,16 @@ open index.html
 
 Star lists require a `GITHUB_TOKEN` with no special scopes. Without a token, repos are still collected (at 60 req/hr) but lists are skipped.
 
+## GitHub Pages deployment
+
+The included workflow (`.github/workflows/deploy.yml`) runs the collector daily and deploys to GitHub Pages. To set it up:
+
+1. In your repo, go to **Settings > Pages** and set Source to **GitHub Actions**
+2. Add a **secret** at Settings > Secrets > Actions:
+   - `STARS_TOKEN` — a [personal access token](https://github.com/settings/tokens?type=beta) (fine-grained, no permissions needed)
+3. Add a **variable** at Settings > Variables > Actions:
+   - `GH_USERNAME` — your GitHub username
+
 ## File structure
 
 ```
