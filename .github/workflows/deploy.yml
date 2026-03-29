@@ -29,8 +29,8 @@ jobs:
 
       - name: Collect stars
         env:
-          GITHUB_USERNAME: ${{ vars.GH_USERNAME }}
-          GITHUB_TOKEN: ${{ secrets.STARS_TOKEN }}
+          GH_USERNAME: ${{ vars.GH_USERNAME }}
+          GH_TOKEN: ${{ secrets.STARS_TOKEN }}
         run: node collect.mjs
 
       - name: Prepare site

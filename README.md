@@ -70,7 +70,7 @@ open index.html
 # or deploy index.html + data.json + favicon.ico to any static host
 ```
 
-Star lists require a `GITHUB_TOKEN` with no special scopes. Without a token, repos are still collected (at 60 req/hr) but lists are skipped.
+Star lists require a `GH_TOKEN` with no special scopes. Without a token, repos are still collected (at 60 req/hr) but lists are skipped.
 
 ## GitHub Pages deployment
 

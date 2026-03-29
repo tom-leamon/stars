@@ -15,7 +15,7 @@ if (existsSync('.env')) {
 // --- Config ---
 
 const API = 'https://api.github.com';
-const TOKEN = process.env.GITHUB_TOKEN;
+const TOKEN = process.env.GH_TOKEN;
 const BASE_HEADERS = { 'User-Agent': 'stars-collector' };
 const HEADERS = {
   ...BASE_HEADERS,
@@ -135,7 +135,7 @@ function saveData(data) {
 // --- Username detection ---
 
 function getUsername() {
-  if (process.env.GITHUB_USERNAME) return process.env.GITHUB_USERNAME;
+  if (process.env.GH_USERNAME) return process.env.GH_USERNAME;
   try {
     const remote = execSync('git config --get remote.origin.url', { encoding: 'utf-8' }).trim();
     const m = remote.match(/github\.com[/:]([^/]+)\//);
@@ -145,9 +145,9 @@ function getUsername() {
 
 // --- Main ---
 
-const user = process.argv[2] || process.env.GITHUB_USERNAME || getUsername();
+const user = process.argv[2] || process.env.GH_USERNAME || getUsername();
 if (!user) { console.error('usage: node collect.mjs <username>'); process.exit(1); }
-if (!TOKEN) console.log('no GITHUB_TOKEN set, using unauthenticated API (60 req/hr)');
+if (!TOKEN) console.log('no GH_TOKEN set, using unauthenticated API (60 req/hr)');
 
 const data = loadData();
 data.username = user;
