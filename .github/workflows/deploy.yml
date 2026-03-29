@@ -1,0 +1,45 @@
+name: Collect & Deploy
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # midnight UTC daily
+  workflow_dispatch: # manual trigger
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Collect stars
+        env:
+          GITHUB_USERNAME: ${{ vars.GITHUB_USERNAME }}
+          GITHUB_TOKEN: ${{ secrets.STARS_TOKEN }}
+        run: node collect.mjs
+
+      - name: Prepare site
+        run: |
+          mkdir _site
+          cp index.html data.json favicon.ico _site/
+
+      - uses: actions/upload-pages-artifact@v3
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
