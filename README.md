@@ -78,7 +78,7 @@ The included workflow (`.github/workflows/deploy.yml`) runs the collector daily 
 
 1. In your repo, go to **Settings > Pages** and set Source to **GitHub Actions**
 2. Add a **secret** at Settings > Secrets > Actions:
-   - `STARS_TOKEN` — a [personal access token](https://github.com/settings/tokens?type=beta) (fine-grained, no permissions needed)
+   - `GH_TOKEN` — a [personal access token](https://github.com/settings/tokens?type=beta) (fine-grained, no permissions needed)
 3. Add a **variable** at Settings > Variables > Actions:
    - `GH_USERNAME` — your GitHub username
 

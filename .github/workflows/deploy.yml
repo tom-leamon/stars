@@ -30,7 +30,7 @@ jobs:
       - name: Collect stars
         env:
           GH_USERNAME: ${{ vars.GH_USERNAME }}
-          GH_TOKEN: ${{ secrets.STARS_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: node collect.mjs
 
       - name: Prepare site
